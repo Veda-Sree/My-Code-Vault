@@ -1,0 +1,302 @@
+import csv
+import os
+import tkinter as tk
+from tkinter import filedialog, messagebox
+
+# CSV file paths
+tender_file = 'tenders.csv'
+invoice_file = 'invoices.csv'
+
+# Ensure the CSV files exist and have headers
+def initialize_csv_files():
+    if not os.path.exists(tender_file):
+        with open(tender_file, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['tender_number', 'client_name', 'bid_amount', 'status', 'product_name', 'quantity', 'date_raised', 'documents'])
+    if not os.path.exists(invoice_file):
+        with open(invoice_file, mode='w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(['invoice_number', 'tender_number', 'client_name', 'amount_due', 'invoice_date', 'status', 'description', 'documents'])
+
+# Function to add a new tender
+def add_tender(tender_number, client_name, bid_amount, status, product_name, quantity, date_raised, documents=[]):
+    with open(tender_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([tender_number, client_name, bid_amount, status, product_name, quantity, date_raised, ",".join(documents)])
+    print(f"Tender {tender_number} added successfully.")
+
+# Function to list all tenders
+def list_tenders():
+    if os.path.exists(tender_file):
+        with open(tender_file, mode='r', newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                print(row)
+    else:
+        print("No tenders found.")
+
+# Function to update a tender
+def update_tender(tender_number, new_bid_amount):
+    updated = False
+    rows = []
+    if os.path.exists(tender_file):
+        with open(tender_file, mode='r', newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0] == tender_number:
+                    row[2] = new_bid_amount
+                    updated = True
+                rows.append(row)
+
+        if updated:
+            with open(tender_file, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(rows)
+            print(f"Tender {tender_number} updated successfully.")
+        else:
+            print(f"Tender {tender_number} not found.")
+    else:
+        print("No tenders found.")
+
+# Function to delete a tender
+def delete_tender(tender_number):
+    deleted = False
+    rows = []
+    if os.path.exists(tender_file):
+        with open(tender_file, mode='r', newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0] == tender_number:
+                    deleted = True
+                else:
+                    rows.append(row)
+
+        if deleted:
+            with open(tender_file, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(rows)
+            print(f"Tender {tender_number} deleted successfully.")
+        else:
+            print(f"Tender {tender_number} not found.")
+    else:
+        print("No tenders found.")
+
+# Functions for Invoice Management
+def generate_invoice(tender_number, client_name, amount_due, invoice_date, status, description, documents=[]):
+    invoice_number = f"INV-{tender_number}"
+    with open(invoice_file, mode='a', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow([invoice_number, tender_number, client_name, amount_due, invoice_date, status, description, ",".join(documents)])
+    print(f"Invoice {invoice_number} generated successfully.")
+
+def list_invoices():
+    if os.path.exists(invoice_file):
+        with open(invoice_file, mode='r', newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                print(row)
+    else:
+        print("No invoices found.")
+
+def mark_paid(invoice_number):
+    updated = False
+    rows = []
+    if os.path.exists(invoice_file):
+        with open(invoice_file, mode='r', newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0] == invoice_number:
+                    row[5] = 'Paid'  # Update the status field
+                    updated = True
+                rows.append(row)
+
+        if updated:
+            with open(invoice_file, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(rows)
+            print(f"Invoice {invoice_number} marked as paid.")
+        else:
+            print(f"Invoice {invoice_number} not found.")
+    else:
+        print("No invoices found.")
+
+def delete_invoice(invoice_number):
+    deleted = False
+    rows = []
+    if os.path.exists(invoice_file):
+        with open(invoice_file, mode='r', newline='') as file:
+            reader = csv.reader(file)
+            for row in reader:
+                if row[0] == invoice_number:
+                    deleted = True
+                else:
+                    rows.append(row)
+
+        if deleted:
+            with open(invoice_file, mode='w', newline='') as file:
+                writer = csv.writer(file)
+                writer.writerows(rows)
+            print(f"Invoice {invoice_number} deleted successfully.")
+        else:
+            print(f"Invoice {invoice_number} not found.")
+    else:
+        print("No invoices found.")
+
+# Initialize CSV files with headers if they don't exist
+initialize_csv_files()
+
+# Define the main application window using Tkinter
+class TenderInvoiceApp:
+    def __init__(self, root):
+        self.root = root
+        self.root.title("Tender and Invoice Management System")
+
+        tk.Button(self.root, text="Add Tender", command=self.add_tender_window).pack(pady=10)
+        tk.Button(self.root, text="List Tenders", command=list_tenders).pack(pady=10)
+        tk.Button(self.root, text="Generate Invoice", command=self.generate_invoice_window).pack(pady=10)
+        tk.Button(self.root, text="List Invoices", command=list_invoices).pack(pady=10)
+        tk.Button(self.root, text="Mark Invoice as Paid", command=self.mark_paid_window).pack(pady=10)
+        tk.Button(self.root, text="Delete Invoice", command=self.delete_invoice_window).pack(pady=10)
+
+    def add_tender_window(self):
+        self.tender_window = tk.Toplevel(self.root)
+        self.tender_window.title("Add New Tender")
+
+        tk.Label(self.tender_window, text="Tender Number").grid(row=0, column=0, padx=5, pady=5)
+        self.tender_number_entry = tk.Entry(self.tender_window)
+        self.tender_number_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(self.tender_window, text="Client Name").grid(row=1, column=0, padx=5, pady=5)
+        self.client_name_entry = tk.Entry(self.tender_window)
+        self.client_name_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        tk.Label(self.tender_window, text="Bid Amount").grid(row=2, column=0, padx=5, pady=5)
+        self.bid_amount_entry = tk.Entry(self.tender_window)
+        self.bid_amount_entry.grid(row=2, column=1, padx=5, pady=5)
+
+        tk.Label(self.tender_window, text="Product Name").grid(row=3, column=0, padx=5, pady=5)
+        self.product_name_entry = tk.Entry(self.tender_window)
+        self.product_name_entry.grid(row=3, column=1, padx=5, pady=5)
+
+        tk.Label(self.tender_window, text="Quantity").grid(row=4, column=0, padx=5, pady=5)
+        self.quantity_entry = tk.Entry(self.tender_window)
+        self.quantity_entry.grid(row=4, column=1, padx=5, pady=5)
+
+        tk.Label(self.tender_window, text="Date Raised").grid(row=5, column=0, padx=5, pady=5)
+        self.date_raised_entry = tk.Entry(self.tender_window)
+        self.date_raised_entry.grid(row=5, column=1, padx=5, pady=5)
+
+        tk.Label(self.tender_window, text="Status").grid(row=6, column=0, padx=5, pady=5)
+        self.status_entry = tk.Entry(self.tender_window)
+        self.status_entry.grid(row=6, column=1, padx=5, pady=5)
+
+        self.documents = []
+
+        tk.Button(self.tender_window, text="Upload Documents", command=self.upload_documents).grid(row=7, column=0, columnspan=2, pady=10)
+
+        tk.Button(self.tender_window, text="Save", command=self.save_tender).grid(row=8, column=0, columnspan=2, pady=10)
+
+    def save_tender(self):
+        tender_number = self.tender_number_entry.get()
+        client_name = self.client_name_entry.get()
+        bid_amount = self.bid_amount_entry.get()
+        product_name = self.product_name_entry.get()
+        quantity = self.quantity_entry.get()
+        date_raised = self.date_raised_entry.get()
+        status = self.status_entry.get()
+        add_tender(tender_number, client_name, bid_amount, status, product_name, quantity, date_raised, self.documents)
+        self.tender_window.destroy()
+
+    def upload_documents(self):
+        file_paths = filedialog.askopenfilenames(initialdir="/", title="Select file", filetypes=(("PDF files", "*.pdf"), ("All files", "*.*")))
+        self.documents.extend(file_paths)
+        print("Uploaded documents:")
+        for path in file_paths:
+            print(path)
+
+    def generate_invoice_window(self):
+        self.invoice_window = tk.Toplevel(self.root)
+        self.invoice_window.title("Generate Invoice")
+
+        tk.Label(self.invoice_window, text="Tender Number").grid(row=0, column=0, padx=5, pady=5)
+        self.tender_number_entry = tk.Entry(self.invoice_window)
+        self.tender_number_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Label(self.invoice_window, text="Client Name").grid(row=1, column=0, padx=5, pady=5)
+        self.client_name_entry = tk.Entry(self.invoice_window)
+        self.client_name_entry.grid(row=1, column=1, padx=5, pady=5)
+
+        tk.Label(self.invoice_window, text="Amount Due").grid(row=2, column=0, padx=5, pady=5)
+        self.amount_due_entry = tk.Entry(self.invoice_window)
+        self.amount_due_entry.grid(row=2, column=1, padx=5, pady=5)
+
+        tk.Label(self.invoice_window, text="Invoice Date").grid(row=3, column=0, padx=5, pady=5)
+        self.invoice_date_entry = tk.Entry(self.invoice_window)
+        self.invoice_date_entry.grid(row=3, column=1, padx=5, pady=5)
+
+        tk.Label(self.invoice_window, text="Status").grid(row=4, column=0, padx=5, pady=5)
+        self.status_entry = tk.Entry(self.invoice_window)
+        self.status_entry.grid(row=4, column=1, padx=5, pady=5)
+
+        tk.Label(self.invoice_window, text="Description").grid(row=5, column=0, padx=5, pady=5)
+        self.description_entry = tk.Entry(self.invoice_window)
+        self.description_entry.grid(row=5, column=1, padx=5, pady=5)
+
+        self.invoice_documents = []
+
+        tk.Button(self.invoice_window, text="Upload Documents", command=self.upload_invoice_documents).grid(row=6, column=0, columnspan=2, pady=10)
+
+        tk.Button(self.invoice_window, text="Generate", command=self.generate_invoice).grid(row=7, column=0, columnspan=2, pady=10)
+
+    def generate_invoice(self):
+        tender_number = self.tender_number_entry.get()
+        client_name = self.client_name_entry.get()
+        amount_due = self.amount_due_entry.get()
+        invoice_date = self.invoice_date_entry.get()
+        status = self.status_entry.get()
+        description = self.description_entry.get()
+        generate_invoice(tender_number, client_name, amount_due, invoice_date, status, description, self.invoice_documents)
+        self.invoice_window.destroy()
+
+    def upload_invoice_documents(self):
+        file_paths = filedialog.askopenfilenames(initialdir="/", title="Select file", filetypes=(("PDF files", "*.pdf"), ("All files", "*.*")))
+        self.invoice_documents.extend(file_paths)
+        print("Uploaded documents:")
+        for path in file_paths:
+            print(path)
+
+    def mark_paid_window(self):
+        self.mark_paid_window = tk.Toplevel(self.root)
+        self.mark_paid_window.title("Mark Invoice as Paid")
+
+        tk.Label(self.mark_paid_window, text="Invoice Number").grid(row=0, column=0, padx=5, pady=5)
+        self.invoice_number_entry = tk.Entry(self.mark_paid_window)
+        self.invoice_number_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Button(self.mark_paid_window, text="Mark as Paid", command=self.mark_paid).grid(row=1, column=0, columnspan=2, pady=10)
+
+    def mark_paid(self):
+        invoice_number = self.invoice_number_entry.get()
+        mark_paid(invoice_number)
+        self.mark_paid_window.destroy()
+
+    def delete_invoice_window(self):
+        self.delete_invoice_window = tk.Toplevel(self.root)
+        self.delete_invoice_window.title("Delete Invoice")
+
+        tk.Label(self.delete_invoice_window, text="Invoice Number").grid(row=0, column=0, padx=5, pady=5)
+        self.invoice_number_entry = tk.Entry(self.delete_invoice_window)
+        self.invoice_number_entry.grid(row=0, column=1, padx=5, pady=5)
+
+        tk.Button(self.delete_invoice_window, text="Delete", command=self.delete_invoice).grid(row=1, column=0, columnspan=2, pady=10)
+
+    def delete_invoice(self):
+        invoice_number = self.invoice_number_entry.get()
+        delete_invoice(invoice_number)
+        self.delete_invoice_window.destroy()
+
+# Run the application
+if __name__ == "__main__":
+    root = tk.Tk()
+    app = TenderInvoiceApp(root)
+    root.mainloop()
